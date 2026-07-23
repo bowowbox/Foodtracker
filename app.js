@@ -439,15 +439,24 @@
   // ---------- Quantity modal ----------
   function openQtyModal(food) {
     pendingFood = food;
-    pendingQty = 1;
     $("qty-food-name").textContent = food.thai ? `${food.name} · ${food.thai}` : food.name;
     $("qty-serving-label").textContent = `Serving: ${food.serving}`;
-    updateQty();
+    setQty(1);
     $("qty-overlay").classList.remove("hidden");
   }
-  function updateQty() {
-    $("qty-value").textContent = pendingQty % 1 === 0 ? pendingQty : pendingQty.toFixed(1);
+  // Format a quantity without trailing zeros: 1 -> "1", 0.2 -> "0.2", 1.5 -> "1.5"
+  function fmtQty(q) {
+    return Number.isInteger(q) ? String(q) : String(Math.round(q * 10) / 10);
+  }
+  function qtyKcalReadout() {
     $("qty-kcal").textContent = Math.round(pendingFood.kcal * pendingQty).toLocaleString();
+  }
+  // Set the portion, clamp to [0.1, 20], round to 1 decimal, sync the input + kcal
+  function setQty(q) {
+    q = Math.min(20, Math.max(0.1, Math.round(q * 10) / 10));
+    pendingQty = q;
+    $("qty-input").value = fmtQty(q);
+    qtyKcalReadout();
   }
   function closeQtyModal() {
     $("qty-overlay").classList.add("hidden");
@@ -556,18 +565,27 @@
   $("new-food-form").addEventListener("submit", handleNewFood);
 
   $("qty-close").addEventListener("click", closeQtyModal);
-  $("qty-minus").addEventListener("click", () => {
-    pendingQty = Math.max(0.5, pendingQty - 0.5);
-    updateQty();
+  $("qty-minus").addEventListener("click", () => setQty(pendingQty - 0.1));
+  $("qty-plus").addEventListener("click", () => setQty(pendingQty + 0.1));
+  $("qty-input").addEventListener("input", () => {
+    // Update the live kcal while typing without fighting the caret; normalize on blur
+    const v = parseFloat($("qty-input").value);
+    if (Number.isFinite(v) && v > 0) {
+      pendingQty = Math.min(20, v);
+      qtyKcalReadout();
+    }
   });
-  $("qty-plus").addEventListener("click", () => {
-    pendingQty = Math.min(20, pendingQty + 0.5);
-    updateQty();
+  $("qty-input").addEventListener("blur", () => setQty(pendingQty));
+  $("qty-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      $("qty-add").click();
+    }
   });
   $("qty-add").addEventListener("click", () => {
     if (!pendingFood) return;
     const food = pendingFood;
-    const qty = pendingQty;
+    const qty = Math.min(20, Math.max(0.1, Math.round(pendingQty * 10) / 10));
     closeQtyModal();
     closeFoodModal();
     addEntry(activeMeal, food, qty);

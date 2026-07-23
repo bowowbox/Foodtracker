@@ -114,8 +114,13 @@
       <!-- New food tab -->
       <div class="tab-panel hidden" id="panel-new">
         <form id="new-food-form">
-          <label class="field">Name <input class="input" id="nf-name" required placeholder="e.g. Grandma's kaeng som" /></label>
-          <label class="field">Thai name <span class="optional">(optional)</span> <input class="input" id="nf-thai" placeholder="เช่น แกงส้มคุณยาย" /></label>
+          <label class="field">Name <input class="input" id="nf-name" required placeholder="e.g. Grandma's kaeng som" autocomplete="off" /></label>
+          <div id="nf-suggestions" class="nf-suggest hidden"></div>
+          <div class="nf-templates">
+            <span class="nf-templates-label">No match? Start from a type:</span>
+            <div class="chips" id="nf-template-chips"></div>
+          </div>
+          <label class="field">Thai name <span class="optional">(optional)</span> <input class="input" id="nf-thai" placeholder="เช่น แกงส้มคุณยาย" autocomplete="off" /></label>
           <label class="field">Serving <input class="input" id="nf-serving" required placeholder="e.g. 1 bowl" /></label>
           <div class="field-row">
             <label class="field">Calories <input class="input" id="nf-kcal" type="number" min="0" max="5000" required placeholder="kcal" /></label>
@@ -141,10 +146,11 @@
       </div>
       <p class="qty-serving" id="qty-serving-label">1 serving</p>
       <div class="qty-row">
-        <button class="qty-btn" id="qty-minus">−</button>
-        <span class="qty-value" id="qty-value">1</span>
-        <button class="qty-btn" id="qty-plus">+</button>
+        <button class="qty-btn" id="qty-minus" aria-label="Less">−</button>
+        <input class="qty-input" id="qty-input" type="text" inputmode="decimal" value="1" aria-label="Portion amount" />
+        <button class="qty-btn" id="qty-plus" aria-label="More">+</button>
       </div>
+      <p class="qty-hint">Type any amount — e.g. 0.2, 0.5, 1.5</p>
       <p class="qty-kcal"><span id="qty-kcal">0</span> kcal</p>
       <button class="btn primary full" id="qty-add">Add</button>
     </div>
