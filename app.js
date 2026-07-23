@@ -266,7 +266,7 @@
 
           const info = document.createElement("div");
           info.className = "meal-item-info";
-          const qtyText = e.qty !== 1 ? ` × ${e.qty}` : "";
+          const qtyText = e.qty !== 1 ? ` × ${fmtQty(e.qty)}` : "";
           info.innerHTML = `
             <div class="meal-item-name"></div>
             <div class="meal-item-sub"></div>`;
@@ -343,6 +343,7 @@
     $("food-search").value = "";
     activeCategory = "All";
     switchTab("search");
+    resetNewFood();
     renderChips();
     renderFoodList();
     $("modal-overlay").classList.remove("hidden");
@@ -436,6 +437,103 @@
     }
   }
 
+  // ---------- New-food suggestions ----------
+  function searchFoods(q) {
+    q = q.trim().toLowerCase();
+    if (!q) return [];
+    return allFoods().filter(
+      (f) =>
+        f.name.toLowerCase().includes(q) ||
+        (f.thai && f.thai.includes(q)) ||
+        f.cat.toLowerCase().includes(q)
+    );
+  }
+
+  function applyPrefill(source) {
+    if (source.serving) $("nf-serving").value = source.serving;
+    $("nf-kcal").value = source.kcal;
+    $("nf-p").value = source.p != null ? source.p : "";
+    $("nf-c").value = source.c != null ? source.c : "";
+    $("nf-f").value = source.f != null ? source.f : "";
+    toast(source.name ? `Filled from ${source.name} — edit as needed` : "Values filled — edit as needed");
+  }
+
+  function renderNfSuggestions() {
+    const q = ($("nf-name").value || $("nf-thai").value || "").trim();
+    const box = $("nf-suggestions");
+    if (q.length < 2) {
+      box.classList.add("hidden");
+      box.innerHTML = "";
+      return;
+    }
+    const matches = searchFoods(q).slice(0, 4);
+    if (!matches.length) {
+      box.classList.add("hidden");
+      box.innerHTML = "";
+      return;
+    }
+    box.innerHTML = "";
+    const label = document.createElement("div");
+    label.className = "nf-suggest-label";
+    label.textContent = "Tap a similar food to fill in its nutrition:";
+    box.appendChild(label);
+    for (const food of matches) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "nf-suggest-row";
+      const info = document.createElement("div");
+      info.className = "nf-suggest-info";
+      const name = document.createElement("div");
+      name.className = "nf-suggest-name";
+      name.textContent = food.thai ? `${food.name} · ${food.thai}` : food.name;
+      const sub = document.createElement("div");
+      sub.className = "nf-suggest-sub";
+      sub.textContent = `${food.serving} · ${Math.round(food.p)} g protein`;
+      info.append(name, sub);
+      const kcal = document.createElement("span");
+      kcal.className = "nf-suggest-kcal";
+      kcal.innerHTML = `${food.kcal} <small>kcal</small>`;
+      btn.append(info, kcal);
+      btn.addEventListener("click", () => applyPrefill(food));
+      box.appendChild(btn);
+    }
+    box.classList.remove("hidden");
+  }
+
+  // Curated "dish type" starting points for foods with no close match
+  const NF_TEMPLATES = [
+    { label: "Rice dish", serving: "1 plate", kcal: 550, p: 20, c: 70, f: 20 },
+    { label: "Noodle soup", serving: "1 bowl", kcal: 400, p: 18, c: 50, f: 12 },
+    { label: "Stir-fry", serving: "1 serving", kcal: 350, p: 20, c: 12, f: 24 },
+    { label: "Curry", serving: "1 bowl", kcal: 300, p: 18, c: 12, f: 20 },
+    { label: "Salad (yum)", serving: "1 plate", kcal: 200, p: 14, c: 14, f: 9 },
+    { label: "Grilled meat", serving: "1 serving", kcal: 250, p: 25, c: 3, f: 16 },
+    { label: "Soup", serving: "1 bowl", kcal: 150, p: 12, c: 9, f: 7 },
+    { label: "Dessert", serving: "1 serving", kcal: 280, p: 4, c: 45, f: 10 },
+    { label: "Drink", serving: "1 cup", kcal: 180, p: 3, c: 32, f: 5 },
+    { label: "Snack", serving: "1 pack", kcal: 150, p: 3, c: 18, f: 8 },
+    { label: "Fruit", serving: "1 serving", kcal: 70, p: 1, c: 17, f: 0.3 },
+  ];
+
+  function renderNfTemplates() {
+    const wrap = $("nf-template-chips");
+    wrap.innerHTML = "";
+    for (const t of NF_TEMPLATES) {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip";
+      chip.textContent = t.label;
+      chip.addEventListener("click", () => applyPrefill(t));
+      wrap.appendChild(chip);
+    }
+  }
+
+  function resetNewFood() {
+    $("new-food-form").reset();
+    $("nf-suggestions").classList.add("hidden");
+    $("nf-suggestions").innerHTML = "";
+  }
+
   // ---------- Quantity modal ----------
   function openQtyModal(food) {
     pendingFood = food;
@@ -487,6 +585,7 @@
     customFoods.unshift(food);
     save(LS.custom, customFoods);
     event.target.reset();
+    $("nf-suggestions").classList.add("hidden");
     closeFoodModal();
     addEntry(activeMeal, food, 1);
   }
@@ -563,6 +662,8 @@
     b.addEventListener("click", () => switchTab(b.dataset.tab))
   );
   $("new-food-form").addEventListener("submit", handleNewFood);
+  $("nf-name").addEventListener("input", renderNfSuggestions);
+  $("nf-thai").addEventListener("input", renderNfSuggestions);
 
   $("qty-close").addEventListener("click", closeQtyModal);
   $("qty-minus").addEventListener("click", () => setQty(pendingQty - 0.1));
@@ -620,5 +721,6 @@
     }
   }, 60 * 1000);
 
+  renderNfTemplates();
   render();
 })();

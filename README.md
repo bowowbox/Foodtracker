@@ -6,16 +6,21 @@ database of foods commonly eaten in Thailand. Inspired by apps like Noom.
 ## Features
 
 - **Meal-by-meal logging** — breakfast, lunch, dinner, and snacks & drinks
-- **Thai food database** — 120+ common Thai dishes, street food, desserts,
-  drinks and fruits with calories and macros (protein / carbs / fat), searchable
-  in English or Thai (e.g. `pad thai` or `ส้มตำ`)
-- **Add your own foods** — anything not in the database can be saved with its
-  own nutrition info and reused later
+- **Big Thai-first food database** — 1,000+ items across 20 categories: Thai
+  dishes (with pork / chicken / beef / seafood / tofu and regional variants),
+  generic ingredients per 100 g, fast food & chains, café & bakery, snacks,
+  drinks, desserts and international dishes — all with calories and macros
+  (protein / carbs / fat), searchable in English or Thai (e.g. `pad thai` or `ส้มตำ`)
+- **Add your own foods, with smart suggestions** — as you type a new food's
+  name, KinDee suggests nutrition values from similar foods (tap to fill), plus
+  dish-type starting points (rice dish, curry, dessert…) for anything with no
+  close match. Saved foods are reused later.
 - **Daily calorie goal** — set your target and watch the progress ring fill up
 - **Encouraging words** — supportive messages that adapt to how your day is
   going (tap the card for another one)
 - **Week overview** — see the last 7 days at a glance and jump between days
-- **Serving quantities** — log half portions or multiples (× 0.5 steps)
+- **Fine serving quantities** — type any decimal portion (× 0.2, × 0.5, × 1.5)
+  or nudge with 0.1-step buttons
 - **Private by design** — everything is stored in your browser
   (`localStorage`); no account, no server, no tracking
 
