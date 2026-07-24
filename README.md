@@ -19,10 +19,15 @@ database of foods commonly eaten in Thailand. Inspired by apps like Noom.
 - **Encouraging words** — supportive messages that adapt to how your day is
   going (tap the card for another one)
 - **Week overview** — see the last 7 days at a glance and jump between days
+- **Weekly & monthly summaries** — tap 📊 for average calories, days on goal,
+  average protein, a daily bar chart, your closest-to-goal and highest days, and
+  most-logged foods (computed in the browser, no backend needed)
 - **Fine serving quantities** — type any decimal portion (× 0.2, × 0.5, × 1.5)
   or nudge with 0.1-step buttons
-- **Private by design** — everything is stored in your browser
-  (`localStorage`); no account, no server, no tracking
+- **Private by default, sync when you want** — data is stored in your browser
+  (`localStorage`) with no account required. Optionally connect a free
+  [Supabase](https://supabase.com) project (tap 👤) to keep a per-person log that
+  syncs across devices — see [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md)
 
 ## Running it
 

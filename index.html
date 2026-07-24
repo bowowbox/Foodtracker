@@ -23,9 +23,14 @@
           <p class="brand-sub">กินดี · eat well, feel well</p>
         </div>
       </div>
-      <button class="icon-btn" id="btn-goal" title="Set daily goal" aria-label="Set daily calorie goal">⚙</button>
+      <div class="header-actions">
+        <button class="icon-btn" id="btn-account" title="Account & sync" aria-label="Account and sync">👤</button>
+        <button class="icon-btn" id="btn-stats" title="Weekly & monthly stats" aria-label="Weekly and monthly stats">📊</button>
+        <button class="icon-btn" id="btn-goal" title="Set daily goal" aria-label="Set daily calorie goal">⚙</button>
+      </div>
     </header>
 
+    <div id="day-view">
     <!-- Date navigation -->
     <nav class="date-nav">
       <button class="icon-btn" id="date-prev" aria-label="Previous day">‹</button>
@@ -84,6 +89,20 @@
 
     <!-- Meals -->
     <main id="meals"></main>
+    </div><!-- /day-view -->
+
+    <!-- Stats view -->
+    <section id="stats-view" class="hidden">
+      <div class="stats-head">
+        <h2 class="stats-title">Your summary</h2>
+        <button class="link-btn" id="stats-close">← Back to today</button>
+      </div>
+      <div class="tabs stats-tabs">
+        <button class="tab active" data-period="week">This week</button>
+        <button class="tab" data-period="month">This month</button>
+      </div>
+      <div id="stats-body"></div>
+    </section>
 
     <footer class="footer">
       Data stays in your browser · <span id="db-count">0</span> Thai foods in database
@@ -175,9 +194,47 @@
     </div>
   </div>
 
+  <!-- Account / sync modal -->
+  <div class="modal-overlay hidden" id="account-overlay">
+    <div class="modal small" role="dialog" aria-modal="true" aria-labelledby="account-title">
+      <div class="modal-head">
+        <h2 id="account-title">Account &amp; sync</h2>
+        <button class="icon-btn" id="account-close" aria-label="Close">✕</button>
+      </div>
+
+      <!-- State A: backend not configured -->
+      <div id="account-setup">
+        <p class="account-intro">Sync your log across devices with a free
+          <a href="https://supabase.com" target="_blank" rel="noopener">Supabase</a>
+          project. Paste your project URL and public anon key (see the setup guide).</p>
+        <label class="field">Project URL <input class="input" id="sb-url" placeholder="https://xxxx.supabase.co" autocomplete="off" /></label>
+        <label class="field">Anon public key <input class="input" id="sb-key" placeholder="eyJhbGciOi…" autocomplete="off" /></label>
+        <button class="btn primary full" id="sb-save">Connect</button>
+        <p class="hint">The anon key is safe to use in the browser. Without this, KinDee keeps working offline on this device.</p>
+      </div>
+
+      <!-- State B: configured, signed out -->
+      <div id="account-signin" class="hidden">
+        <p class="account-intro">Enter your email — we'll send a one-tap magic link, no password needed.</p>
+        <label class="field">Email <input class="input" id="sb-email" type="email" placeholder="you@email.com" autocomplete="email" /></label>
+        <button class="btn primary full" id="sb-signin">Send magic link</button>
+        <button class="link-btn account-reset" id="sb-forget">Use a different Supabase project</button>
+      </div>
+
+      <!-- State C: signed in -->
+      <div id="account-signedin" class="hidden">
+        <p class="account-intro">Signed in as <strong id="sb-who">—</strong>. Your log syncs automatically.</p>
+        <p class="account-status" id="sb-status"></p>
+        <button class="btn primary full" id="sb-syncnow">Sync now</button>
+        <button class="link-btn account-reset" id="sb-signout">Sign out</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast hidden" id="toast"></div>
 
   <script src="foods.js"></script>
   <script src="app.js"></script>
+  <script src="auth.js"></script>
 </body>
 </html>

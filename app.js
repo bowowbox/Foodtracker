@@ -17,7 +17,20 @@
       return fallback;
     }
   };
-  const save = (key, value) => localStorage.setItem(key, JSON.stringify(value));
+  const save = (key, value) => {
+    localStorage.setItem(key, JSON.stringify(value));
+    // Let an optional sync layer (auth.js) know local data changed
+    try {
+      window.dispatchEvent(new CustomEvent("kindee:changed", { detail: { key } }));
+    } catch {}
+  };
+
+  // Re-read all persisted state (used after a remote sync writes localStorage)
+  function reloadState() {
+    goal = load(LS.goal, 2000);
+    log = load(LS.log, {});
+    customFoods = load(LS.custom, []);
+  }
 
   let goal = load(LS.goal, 2000);
   let log = load(LS.log, {}); // { "YYYY-MM-DD": { breakfast: [entry], ... } }
@@ -36,6 +49,7 @@
   let activeCategory = "All";
   let pendingFood = null; // food selected in search, awaiting quantity
   let pendingQty = 1;
+  let statsPeriod = "week"; // "week" | "month"
 
   function todayKey() {
     const d = new Date();
@@ -304,6 +318,206 @@
 
       container.appendChild(card);
     }
+  }
+
+  // ---------- Stats (weekly / monthly summary) ----------
+  // Inclusive list of date keys between two Date objects
+  function dateKeysBetween(start, end) {
+    const keys = [];
+    const d = new Date(start);
+    while (d <= end) {
+      keys.push(dateKey(d));
+      d.setDate(d.getDate() + 1);
+    }
+    return keys;
+  }
+
+  // The date range for the current period, anchored on today
+  function periodRange(period) {
+    const today = new Date();
+    if (period === "month") {
+      const start = new Date(today.getFullYear(), today.getMonth(), 1);
+      const label = today.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+      return { start, end: today, label, days: today.getDate() };
+    }
+    // week: Monday–Sunday containing today
+    const start = new Date(today);
+    const dow = (today.getDay() + 6) % 7; // 0 = Monday
+    start.setDate(today.getDate() - dow);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    const fmt = (dt) => dt.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+    return { start, end, label: `${fmt(start)} – ${fmt(end)}`, days: 7 };
+  }
+
+  function computeStats(period) {
+    const { start, end, label, days } = periodRange(period);
+    const keys = dateKeysBetween(start, end);
+    const perDay = keys.map((k) => ({ key: k, d: parseKey(k), t: dayTotals(k) }));
+    const logged = perDay.filter((x) => x.t.kcal > 0);
+
+    const totalKcal = logged.reduce((s, x) => s + x.t.kcal, 0);
+    const totalP = logged.reduce((s, x) => s + x.t.p, 0);
+    const avgKcal = logged.length ? Math.round(totalKcal / logged.length) : 0;
+    const avgP = logged.length ? Math.round(totalP / logged.length) : 0;
+    const goalHits = logged.filter((x) => x.t.kcal >= goal * 0.92 && x.t.kcal <= goal * 1.08).length;
+
+    let best = null, high = null;
+    for (const x of logged) {
+      if (!best || x.t.kcal < best.t.kcal) best = x;
+      if (!high || x.t.kcal > high.t.kcal) high = x;
+    }
+
+    // Most-logged foods across the range (by times added)
+    const counts = {};
+    for (const x of perDay) {
+      const day = dayLog(x.key);
+      for (const meal of MEALS) {
+        for (const e of day[meal.key] || []) {
+          const name = e.thai ? `${e.name} · ${e.thai}` : e.name;
+          if (!counts[name]) counts[name] = { name, n: 0, kcal: 0 };
+          counts[name].n += 1;
+          counts[name].kcal += e.kcal * e.qty;
+        }
+      }
+    }
+    const topFoods = Object.values(counts).sort((a, b) => b.n - a.n).slice(0, 5);
+
+    const maxKcal = Math.max(goal, ...perDay.map((x) => x.t.kcal), 1);
+    return { period, label, days, perDay, loggedCount: logged.length, avgKcal, avgP, goalHits, best, high, topFoods, maxKcal };
+  }
+
+  function statsCheer(s) {
+    if (!s.loggedCount) return ["🌱", "No meals logged yet this " + s.period + ". Start today — small steps add up!"];
+    if (s.goalHits >= Math.ceil(s.loggedCount * 0.7)) return ["🏆", `On goal ${s.goalHits} of ${s.loggedCount} logged days — wonderful consistency! Geng mak!`];
+    if (s.avgKcal > goal * 1.12) return ["🤗", "Trending a bit above goal. Be kind to yourself — tomorrow's a fresh plate."];
+    if (s.avgKcal < goal * 0.7) return ["🍚", "Averaging well under goal — make sure you're eating enough to feel good."];
+    return ["💪", "Nice steady tracking. Keep listening to your body — you're doing great!"];
+  }
+
+  function renderStats() {
+    const s = computeStats(statsPeriod);
+    const body = $("stats-body");
+    body.innerHTML = "";
+
+    // Encouraging headline
+    const [emoji, text] = statsCheer(s);
+    const cheer = document.createElement("div");
+    cheer.className = "card cheer-card stats-cheer";
+    cheer.innerHTML = `<span class="cheer-emoji"></span><p class="cheer-text"></p>`;
+    cheer.querySelector(".cheer-emoji").textContent = emoji;
+    cheer.querySelector(".cheer-text").textContent = text;
+    body.appendChild(cheer);
+
+    // Stat tiles
+    const tiles = document.createElement("div");
+    tiles.className = "stat-tiles";
+    const tile = (value, label) => `<div class="stat-tile"><span class="stat-value">${value}</span><span class="stat-label">${label}</span></div>`;
+    tiles.innerHTML =
+      tile(s.avgKcal.toLocaleString(), "avg kcal / day") +
+      tile(`${s.goalHits}/${s.loggedCount}`, "days on goal") +
+      tile(`${s.avgP} g`, "avg protein") +
+      tile(`${s.loggedCount}/${s.days}`, "days logged");
+    body.appendChild(tiles);
+
+    // Daily bar chart
+    const chartCard = document.createElement("section");
+    chartCard.className = "card";
+    const title = document.createElement("div");
+    title.className = "stats-range-label";
+    title.textContent = `${s.label} · goal ${goal.toLocaleString()} kcal/day`;
+    chartCard.appendChild(title);
+
+    const chart = document.createElement("div");
+    chart.className = "stats-chart" + (s.period === "month" ? " month" : "");
+    for (const x of s.perDay) {
+      const col = document.createElement("div");
+      col.className = "stats-col";
+      const barWrap = document.createElement("div");
+      barWrap.className = "stats-bar-wrap";
+      const bar = document.createElement("div");
+      const ratio = x.t.kcal / s.maxKcal;
+      bar.className = "stats-bar";
+      if (x.t.kcal > 0) {
+        const r = x.t.kcal / goal;
+        bar.classList.add(r > 1.08 ? "over" : r >= 0.92 ? "hit" : "some");
+      }
+      bar.style.height = `${Math.max(x.t.kcal > 0 ? 4 : 0, ratio * 100)}%`;
+      bar.title = `${x.d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}: ${Math.round(x.t.kcal)} kcal`;
+      barWrap.appendChild(bar);
+      col.appendChild(barWrap);
+      const lab = document.createElement("span");
+      lab.className = "stats-col-label";
+      lab.textContent = s.period === "month" ? x.d.getDate() : x.d.toLocaleDateString("en-GB", { weekday: "short" }).slice(0, 1);
+      col.appendChild(lab);
+      chart.appendChild(col);
+    }
+    chartCard.appendChild(chart);
+    body.appendChild(chartCard);
+
+    // Best / highest day
+    if (s.best) {
+      const dayFmt = (x) => `${x.d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "short" })} · ${Math.round(x.t.kcal).toLocaleString()} kcal`;
+      const range = document.createElement("section");
+      range.className = "card stats-lohi";
+      range.innerHTML =
+        `<div class="stats-lohi-row"><span class="stats-lohi-label">Closest to goal</span><span class="stats-lohi-val"></span></div>` +
+        `<div class="stats-lohi-row"><span class="stats-lohi-label">Highest day</span><span class="stats-lohi-val"></span></div>`;
+      // closest-to-goal day
+      let closest = null;
+      for (const x of s.perDay) {
+        if (x.t.kcal <= 0) continue;
+        if (!closest || Math.abs(x.t.kcal - goal) < Math.abs(closest.t.kcal - goal)) closest = x;
+      }
+      const vals = range.querySelectorAll(".stats-lohi-val");
+      vals[0].textContent = closest ? dayFmt(closest) : "—";
+      vals[1].textContent = s.high ? dayFmt(s.high) : "—";
+      body.appendChild(range);
+    }
+
+    // Top foods
+    if (s.topFoods.length) {
+      const top = document.createElement("section");
+      top.className = "card";
+      const h = document.createElement("div");
+      h.className = "stats-range-label";
+      h.textContent = "Most-logged foods";
+      top.appendChild(h);
+      const list = document.createElement("ul");
+      list.className = "top-foods";
+      for (const f of s.topFoods) {
+        const li = document.createElement("li");
+        li.className = "top-food";
+        const name = document.createElement("span");
+        name.className = "top-food-name";
+        name.textContent = f.name;
+        const count = document.createElement("span");
+        count.className = "top-food-count";
+        count.textContent = `${f.n}×`;
+        li.append(name, count);
+        list.appendChild(li);
+      }
+      top.appendChild(list);
+      body.appendChild(top);
+    }
+
+    if (!s.loggedCount) {
+      const empty = document.createElement("p");
+      empty.className = "list-empty";
+      empty.textContent = "Log some meals and your summary will appear here.";
+      body.appendChild(empty);
+    }
+  }
+
+  function showStats() {
+    $("day-view").classList.add("hidden");
+    $("stats-view").classList.remove("hidden");
+    renderStats();
+    window.scrollTo(0, 0);
+  }
+  function hideStats() {
+    $("stats-view").classList.add("hidden");
+    $("day-view").classList.remove("hidden");
   }
 
   // ---------- Log mutations ----------
@@ -642,6 +856,23 @@
     currentDate = todayKey();
     render();
   });
+
+  // A remote sync (auth.js) can push fresh data into localStorage then ask us to refresh
+  window.addEventListener("kindee:reload", () => {
+    reloadState();
+    render();
+    if (!$("stats-view").classList.contains("hidden")) renderStats();
+  });
+
+  $("btn-stats").addEventListener("click", showStats);
+  $("stats-close").addEventListener("click", hideStats);
+  document.querySelectorAll(".stats-tabs .tab").forEach((tab) =>
+    tab.addEventListener("click", () => {
+      statsPeriod = tab.dataset.period;
+      document.querySelectorAll(".stats-tabs .tab").forEach((t) => t.classList.toggle("active", t === tab));
+      renderStats();
+    })
+  );
 
   $("btn-goal").addEventListener("click", openGoalModal);
   $("btn-goal-inline").addEventListener("click", openGoalModal);
