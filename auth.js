@@ -23,7 +23,17 @@
   let pushTimer = null;
 
   // ---------- config ----------
+  // Baked-in deployment config (config.js) takes priority so end users just
+  // sign in; otherwise fall back to a per-user config saved in localStorage.
+  function bakedConfig() {
+    const c = window.KINDEE_CONFIG;
+    if (!c || !c.SUPABASE_URL || !c.SUPABASE_ANON_KEY) return null;
+    if (/YOUR-PROJECT|YOUR-ANON/.test(String(c.SUPABASE_URL) + String(c.SUPABASE_ANON_KEY))) return null;
+    return { url: String(c.SUPABASE_URL).replace(/\/$/, ""), key: String(c.SUPABASE_ANON_KEY), baked: true };
+  }
   function loadConfig() {
+    const baked = bakedConfig();
+    if (baked) return baked;
     try {
       const raw = localStorage.getItem(CFG_KEY);
       return raw ? JSON.parse(raw) : null;
@@ -168,9 +178,11 @@
   }
   function refreshUI() {
     const cfg = loadConfig();
-    show("account-setup", !cfg);
+    const baked = !!(cfg && cfg.baked);
+    show("account-setup", !cfg); // never shown when keys are baked in
     show("account-signin", !!cfg && !session);
     show("account-signedin", !!cfg && !!session);
+    if ($("sb-forget")) $("sb-forget").classList.toggle("hidden", baked);
     if (session && $("sb-who")) $("sb-who").textContent = session.user.email || session.user.id;
   }
 

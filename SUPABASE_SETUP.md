@@ -25,14 +25,28 @@ to run — the static site talks to Supabase directly.
    - **Project URL** (looks like `https://abcd1234.supabase.co`)
    - **anon public** key (a long `eyJ…` string — this one is safe to use in a browser)
 
-## Connect the app
+## Connect the app (once, before deploying)
 
-1. Open KinDee and tap the **👤 account** button (top-left).
-2. Paste the **Project URL** and **anon public key**, then **Connect**.
-3. Enter your email and tap **Send magic link**. Open the email, click the link, and
-   you're signed in. Your existing log uploads automatically the first time.
-4. On another device, do the same (connect the same project, sign in with the same
-   email) and your log appears there too.
+1. Copy `config.example.js` to **`config.js`** in the same folder.
+2. Paste your **Project URL** and **anon public key** into it.
+3. Deploy the folder (with `config.js` included) to Netlify.
+
+That's it — now **anyone who visits the site can create their own account**: they
+tap the **👤** button, enter their email, click the magic link, and they're in.
+Each person's data is isolated by row-level security. `config.js` is gitignored so
+your keys aren't committed; the anon key is public-safe, but keeping it per
+deployment is tidy.
+
+> Personal use without editing files? If there's no `config.js`, the 👤 modal lets
+> a single user paste the keys in-app instead. For a public app, prefer `config.js`.
+
+## Exporting your data
+
+Anyone can export their food log at any time (works offline too): open the **👤**
+modal and tap **⬇ Export food log (CSV)**. You get one row per logged item — date,
+meal, food name (English + Thai), serving, quantity, and the calories/protein/
+carbs/fat actually eaten — with a UTF-8 BOM so Thai text opens correctly in Excel
+and Google Sheets.
 
 ## How syncing behaves
 

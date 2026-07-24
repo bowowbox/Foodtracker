@@ -520,6 +520,56 @@
     $("day-view").classList.remove("hidden");
   }
 
+  // ---------- CSV export ----------
+  function csvCell(value) {
+    const s = value == null ? "" : String(value);
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+
+  function exportLogCsv() {
+    const dates = Object.keys(log).sort(); // ascending YYYY-MM-DD
+    const rows = [
+      ["Date", "Meal", "Food", "Thai", "Serving", "Quantity", "Calories", "Protein_g", "Carbs_g", "Fat_g"],
+    ];
+    for (const date of dates) {
+      const day = log[date];
+      for (const meal of MEALS) {
+        for (const e of day[meal.key] || []) {
+          rows.push([
+            date,
+            meal.label,
+            e.name,
+            e.thai || "",
+            e.serving,
+            fmtQty(e.qty),
+            Math.round(e.kcal * e.qty),
+            Math.round(e.p * e.qty * 10) / 10,
+            Math.round(e.c * e.qty * 10) / 10,
+            Math.round(e.f * e.qty * 10) / 10,
+          ]);
+        }
+      }
+    }
+
+    if (rows.length === 1) {
+      toast("No log to export yet");
+      return;
+    }
+
+    const csv = rows.map((r) => r.map(csvCell).join(",")).join("\r\n");
+    // Prepend a UTF-8 BOM so Excel reads Thai characters correctly
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `kindee-log-${todayKey()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast(`Exported ${rows.length - 1} entries to CSV`);
+  }
+
   // ---------- Log mutations ----------
   function addEntry(mealKey, food, qty) {
     if (!log[currentDate]) log[currentDate] = {};
@@ -866,6 +916,7 @@
 
   $("btn-stats").addEventListener("click", showStats);
   $("stats-close").addEventListener("click", hideStats);
+  $("export-csv").addEventListener("click", exportLogCsv);
   document.querySelectorAll(".stats-tabs .tab").forEach((tab) =>
     tab.addEventListener("click", () => {
       statsPeriod = tab.dataset.period;

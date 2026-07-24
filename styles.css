@@ -694,3 +694,24 @@ body {
   margin-top: 12px;
   font-size: 12.5px;
 }
+
+/* ---------- Account data / export ---------- */
+.account-data {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.account-data-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 10px;
+}
+.btn.ghost {
+  background: var(--bg);
+  color: var(--text);
+}
+.btn.ghost:hover { background: var(--accent-soft); color: var(--accent-dark); }

@@ -228,6 +228,12 @@
         <button class="btn primary full" id="sb-syncnow">Sync now</button>
         <button class="link-btn account-reset" id="sb-signout">Sign out</button>
       </div>
+
+      <!-- Your data (always available) -->
+      <div class="account-data">
+        <span class="account-data-label">Your data</span>
+        <button class="btn ghost full" id="export-csv">⬇ Export food log (CSV)</button>
+      </div>
     </div>
   </div>
 
@@ -235,6 +241,24 @@
 
   <script src="foods.js"></script>
   <script src="app.js"></script>
-  <script src="auth.js"></script>
+  <!-- Optional deployment config (Supabase keys). Loads if present; ignored if not. -->
+  <script>
+    (function () {
+      var s = document.createElement("script");
+      s.src = "config.js";
+      s.onerror = function () { /* no config.js — app stays offline-only */ };
+      s.onload = function () { loadAuth(); };
+      // If config 404s, onerror fires and we still load auth.js (manual-entry fallback)
+      s.onerror = function () { loadAuth(); };
+      function loadAuth() {
+        if (loadAuth.done) return;
+        loadAuth.done = true;
+        var a = document.createElement("script");
+        a.src = "auth.js";
+        document.body.appendChild(a);
+      }
+      document.body.appendChild(s);
+    })();
+  </script>
 </body>
 </html>

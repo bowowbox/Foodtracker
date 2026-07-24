@@ -24,10 +24,15 @@ database of foods commonly eaten in Thailand. Inspired by apps like Noom.
   most-logged foods (computed in the browser, no backend needed)
 - **Fine serving quantities** — type any decimal portion (× 0.2, × 0.5, × 1.5)
   or nudge with 0.1-step buttons
-- **Private by default, sync when you want** — data is stored in your browser
-  (`localStorage`) with no account required. Optionally connect a free
-  [Supabase](https://supabase.com) project (tap 👤) to keep a per-person log that
-  syncs across devices — see [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md)
+- **Export to CSV** — tap 👤 → *Export food log (CSV)* to download every logged
+  item (date, meal, food EN/Thai, serving, quantity, calories & macros); UTF-8
+  BOM so Thai opens cleanly in Excel/Sheets. Works offline
+- **Private by default, accounts when you want** — data is stored in your browser
+  (`localStorage`) with no account required. Add a free
+  [Supabase](https://supabase.com) project (keys in `config.js`) and every visitor
+  can create their own account with an email magic link and sync across devices,
+  each person's log isolated by row-level security — see
+  [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md)
 
 ## Running it
 
