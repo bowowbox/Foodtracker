@@ -1,0 +1,41 @@
+/* Admin dashboard — additions on top of styles.css's shared tokens/components. */
+
+.admin-app { max-width: 720px; }
+
+.admin-tiles { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 560px) {
+  .admin-tiles { grid-template-columns: repeat(2, 1fr); }
+}
+
+.admin-table-wrap { overflow-x: auto; }
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.admin-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 0 10px 8px;
+  white-space: nowrap;
+}
+.admin-table td {
+  padding: 10px;
+  border-top: 1px solid var(--line);
+  white-space: nowrap;
+}
+.admin-table tbody tr:hover { background: var(--bg); }
+
+.drilldown-body { overflow-y: auto; }
+.drilldown-day { margin-bottom: 12px; }
+.drilldown-meal { margin-top: 8px; }
+.drilldown-meal-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-soft);
+  margin-top: 6px;
+}

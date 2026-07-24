@@ -64,3 +64,41 @@ and Google Sheets.
 The **📊 stats** screen (This week / This month) is always available and needs no
 backend — it's computed from your log in the browser. Once you're signed in, it simply
 reads the same log after it has synced.
+
+## Admin dashboard — see how many people use it
+
+There's a separate page, **`admin.html`**, that shows usage across *everyone* who's
+signed up: how many people have accounts, how many are actively logging food, a
+30-day activity chart, and — per person — how many days they've logged and how many
+entries, with a button to view their actual log if you need to. It's not linked from
+the app itself; you go to it directly (e.g. `https://your-site.netlify.app/admin.html`).
+
+**This is different from your own account** — it needs to be locked down so *only
+you* (or people you choose) can see it, not just anyone who signs up.
+
+### One-time setup
+
+1. In Supabase, **SQL Editor → New query**, paste the contents of
+   [`supabase/admin_schema.sql`](supabase/admin_schema.sql), and **Run**. This creates
+   an admin allowlist table and a few database functions that check that allowlist
+   before returning any data — the dashboard page never has elevated access on its
+   own, so there's no master key that could leak.
+2. Add yourself as an admin — still in the SQL editor, run:
+   ```sql
+   insert into public.admin_users (email) values ('you@example.com');
+   ```
+   (use the email you'll sign in with). Add more rows for anyone else you trust with
+   this view.
+
+### Using it
+
+Go to `/admin.html` on your deployed site, sign in with the same magic-link flow as
+the main app. If your email is on the allowlist, you'll see the dashboard; if not,
+you'll see a clear "not authorized" message instead of any data.
+
+### What counts as "active"
+
+A day counts as active for a user if they logged at least one food item with that
+date — this is the same idea as the app's own day view, just aggregated across
+everyone. It doesn't track app opens or page views, only days people actually
+recorded eating something.

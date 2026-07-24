@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KinDee — Admin dashboard</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="admin.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>" />
+</head>
+<body>
+  <div class="app admin-app">
+
+    <header class="header">
+      <div class="brand">
+        <span class="brand-logo">📊</span>
+        <div>
+          <h1>KinDee Admin</h1>
+          <p class="brand-sub">Usage &amp; activity — visible to admins only</p>
+        </div>
+      </div>
+      <button class="icon-btn hidden" id="admin-signout" title="Sign out" aria-label="Sign out">⎋</button>
+    </header>
+
+    <!-- Not configured -->
+    <section class="card hidden" id="admin-noconfig">
+      <p class="account-intro">No backend is configured for this deployment
+        (missing <code>config.js</code>), so there's no usage data to show.</p>
+    </section>
+
+    <!-- Sign-in -->
+    <section class="card" id="admin-signin">
+      <p class="account-intro">Sign in with an admin account to view usage stats.</p>
+      <label class="field">Email <input class="input" id="admin-email" type="email" placeholder="you@email.com" autocomplete="email" /></label>
+      <button class="btn primary full" id="admin-send-link">Send magic link</button>
+      <p class="hint" id="admin-signin-status"></p>
+    </section>
+
+    <!-- Not authorized -->
+    <section class="card hidden" id="admin-denied">
+      <p class="account-intro">You're signed in as <strong id="admin-denied-email"></strong>, but
+        this account isn't on the admin allowlist. Add its email to
+        <code>admin_users</code> in Supabase to grant access.</p>
+    </section>
+
+    <!-- Dashboard -->
+    <div id="admin-dashboard" class="hidden">
+      <div class="stat-tiles admin-tiles">
+        <div class="stat-tile"><span class="stat-value" id="stat-signed-up">–</span><span class="stat-label">signed up</span></div>
+        <div class="stat-tile"><span class="stat-value" id="stat-with-log">–</span><span class="stat-label">have logged food</span></div>
+        <div class="stat-tile"><span class="stat-value" id="stat-active-today">–</span><span class="stat-label">active today</span></div>
+        <div class="stat-tile"><span class="stat-value" id="stat-active-week">–</span><span class="stat-label">active this week</span></div>
+      </div>
+
+      <section class="card">
+        <div class="stats-range-label">Daily active users — last 30 days</div>
+        <div class="stats-chart month" id="activity-chart"></div>
+      </section>
+
+      <section class="card">
+        <div class="stats-range-label">Users</div>
+        <div class="admin-table-wrap">
+          <table class="admin-table" id="user-table">
+            <thead>
+              <tr>
+                <th>Email</th><th>Joined</th><th>Days logged</th><th>Entries</th><th>Last active</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="user-table-body"></tbody>
+          </table>
+        </div>
+        <p class="hint" id="user-table-empty">No signed-up users yet.</p>
+      </section>
+    </div>
+
+    <!-- Drill-down: one user's log -->
+    <div class="modal-overlay hidden" id="drilldown-overlay">
+      <div class="modal" role="dialog" aria-modal="true">
+        <div class="modal-head">
+          <h2 id="drilldown-title">User log</h2>
+          <button class="icon-btn" id="drilldown-close" aria-label="Close">✕</button>
+        </div>
+        <div id="drilldown-body" class="drilldown-body"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toast hidden" id="toast"></div>
+
+  <script>
+    (function () {
+      var s = document.createElement("script");
+      s.src = "config.js";
+      function loadAdmin() {
+        if (loadAdmin.done) return;
+        loadAdmin.done = true;
+        var a = document.createElement("script");
+        a.src = "admin.js";
+        document.body.appendChild(a);
+      }
+      s.onload = loadAdmin;
+      s.onerror = loadAdmin;
+      document.body.appendChild(s);
+    })();
+  </script>
+</body>
+</html>
